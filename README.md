@@ -1,0 +1,5 @@
+# Riddim-Scheduler
+
+The Riddim Dance Troupe at Middlebury College holds a performance every semester where we showcase dance pieces choreographed and performed by Riddim dancers. At the beginning of the semester, the Riddim co-directors spend hours creating a schedule that matches choreographers to weekly time slots when they hold the rehearsals for their respective pieces. This scheduling process is time-consuming and inefficient. Additionally, it only factors in the choreographers’ availability, and does not take into account the availability of the dancers and which pieces they want to be in.
+
+This Riddim Scheduler written in Java takes all of the variables into account and also automizes the process, makes scheduling faster and easier for the future generations of dancers. It uses constraints to account for the dancers’ availability and preferences and convert the scheduling problem into a weighted Biparte graph. Then, it applies the Hungarian algorithm to find the optimal matching between choreographers and time slots, thereby creating an optimal schedule for both dancers and choreographers.

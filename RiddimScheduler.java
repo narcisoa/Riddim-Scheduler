@@ -270,7 +270,8 @@ public class RiddimScheduler {
     check that row (scan j)
       update how many 0s there are (numZeros)
       upate where that 0 is (zerojIndex)
-    if there is exactly one 0 (1 optimal matching)
+    if there is exactly one available 0 (1 optimal matching)
+      (available = not already removed as an option, or used for an assignment)
       update column @ zerojIndex --> best match matrix
        1. if that is the only 0 in row --> bestMatrix  = 1 (assigned)
        2. else (not best match) --> bestMatrix -= 1 (remove option to match)
@@ -281,13 +282,18 @@ public class RiddimScheduler {
   **/
   public void scanRow() {
     int numZeros, zerojIndex, zeroiIndex;
-    for (int i = 0; i < n; i++) {      // for each row
+
+    // for each row
+    for (int i = 0; i < n; i++) {
       numZeros = 0;
       zerojIndex = -1;                    //-1: no zero found in row
-      zeroiIndex = -1;
-                                          //note: these vars re-init per row
-      for (int j = 0; j < n; j++) {       // checks each entry in that row
-        if (costMatrix[i][j] == 0) {
+      zeroiIndex = -1;                    //note: these vars re-init per row
+
+      // checks each entry in that row
+      for (int j = 0; j < n; j++) {
+        // if cost = 0 (i.e. cheapest matching)
+        // AND the c and t are available to be matched
+        if ((costMatrix[i][j] == 0) && (bestMatch[i][j] == 0)) {
           numZeros++;                       //counts num of 0s in the row
           zeroiIndex = i;                   //stores location of 0
           zerojIndex = j;
@@ -306,10 +312,9 @@ public class RiddimScheduler {
 
         }
       }
-      System.out.println("Best Match. i = " + i);
+      // System.out.println("Best Match. i = " + i);
       printMatrix(bestMatch);
     }
-
   }
 
 

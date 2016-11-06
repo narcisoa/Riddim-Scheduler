@@ -19,27 +19,6 @@ public class RiddimScheduler {
   public int[][] bestMatch;
 
 
-  /** INIT
-  Input: n x n cost matrix
-  Initializes the instance variables
-  **/
-  public void init(int[][] costMatrix) {
-    // System.out.println("INIT MEDTHOD CALLED");
-    this.n = costMatrix.length;
-    this.costMatrix = new int[n][n];         //initializes the cost matrix
-    for (int i = 0; i < n; i++) {            //fills it in
-      for (int j = 0; j < n; j++) {
-        this.costMatrix[i][j] = costMatrix[i][j];
-      }
-    }
-    this.bestMatch = new int[n][n];         //creates the best match matrix
-    for (int i = 0; i < n; i++) {            //fills it in w/ 0s (ie no match)
-      for (int j = 0; j < n; j++) {
-        this.bestMatch[i][j] = 0;
-      }
-    }
-  }
-
   /** PRE-PROCESSING STEP: Convert maximization to a minimization problem
     in order for the problem to be solved using the Hungarian Alg
     BY finding the maximum benefit value, subtracting all of the values in the
@@ -82,18 +61,40 @@ public class RiddimScheduler {
 
   //Returns the maximum integer in an integer matrix
   public static int maxInMatrix(int[][] matrix) {
-    int max = 0;
+    int max = Integer.MIN_VALUE;
     int numRows = matrix.length;      //REMOVE????
     int numCols = matrix[0].length;
     for (int i = 0; i < numRows; i++) {
       for (int j = 0; j < numCols; j++) {
         if (matrix[i][j] > max) max = matrix[i][j];
-
       }
     }
     return max;
   }
 
+  /** INIT
+  Input: n x n cost matrix
+  Initializes the instance variables for the Hungarian Alg:
+    n = num of rows and cols
+    costMatrix = inputted cost matrix
+    bestMatch = corresponding matrix where 1 indicates best match
+  **/
+  public void init(int[][] costMatrix) {
+    // System.out.println("INIT MEDTHOD CALLED");
+    this.n = costMatrix.length;
+    this.costMatrix = new int[n][n];         //initializes the cost matrix
+    for (int i = 0; i < n; i++) {            //fills it in by copying in
+      for (int j = 0; j < n; j++) {           //values from inputted cost matrix
+        this.costMatrix[i][j] = costMatrix[i][j];
+      }
+    }
+    this.bestMatch = new int[n][n];         //creates the best match matrix
+    for (int i = 0; i < n; i++) {            //fills it in w/ 0s (ie no match)
+      for (int j = 0; j < n; j++) {
+        this.bestMatch[i][j] = 0;
+      }
+    }
+  }
 
   /**
   HUNGARIAN ALGORITHM - APPLIED
@@ -134,7 +135,8 @@ public class RiddimScheduler {
     System.out.println("Best Match Matrix");
     printMatrix(this.bestMatch);
 
-
+    System.out.print("2.1.1 ALL 0'S CROSSED OUT?: ");
+    System.out.println(checkOptimalMatches());
   }
 
   // METHODS - HUNGARIAN ALGORITHM
@@ -166,6 +168,29 @@ public class RiddimScheduler {
     }
   }
 
+  // 1. REDUCE: HELPER FUNCTIONS
+
+  //Returns the minimum integer in the row of a matrix (array)
+  public static int minInRow(int[] row) {
+    int min = (int)Double.POSITIVE_INFINITY;
+    int len = row.length;      //REMOVE????
+    for (int i = 0; i < len; i++) {
+      if (row[i] < min) min = row[i];
+    }
+    return min;
+  }
+
+  //Returns the minimum integer in the column of a matrix
+  public static int minInCol(int[][] matrix, int colIndex) {
+    int min = (int)Double.POSITIVE_INFINITY;
+    int numRows = matrix.length;      //REMOVE????
+    int numCols = matrix[0].length;
+    for (int i = 0; i < numRows; i++) {
+        if (matrix[i][colIndex] < min) min = matrix[i][colIndex];
+    }
+    return min;
+  }
+
   /** PHASE 2: ASSIGN
 
 
@@ -184,13 +209,14 @@ public class RiddimScheduler {
         // 1. Row Scanning
         case 1:
           System.out.println("step 1: row scanning");
-          // INSERT ROW SCANNING CODE
+          scanRow();
 
-          if (x == 10) {      // if (all 0s covered w/ lines)
+          if (checkOptimalMatches()) {
+                                // if (all 0s covered w/ lines)
                                 // i.e. all potential optimal matches (cost = 0)
                                 // have been assigned
                                 // OR can't be used (c OR t already assigned)
-            step = 3;         //  go to step 3  // skip column scanning
+            step = 3;           //  go to step 3  // skip column scanning
             break;
           }
         // else               // follow regular flow
@@ -232,34 +258,9 @@ public class RiddimScheduler {
 
   **/
 
-  // HUNGARIAN ALG: HELPER FUNCTIONS
-
-  // 1. REDUCE: HELPER FUNCTIONS
-
-  //Returns the minimum integer in the row of a matrix (array)
-  public static int minInRow(int[] row) {
-    int min = (int)Double.POSITIVE_INFINITY;
-    int len = row.length;      //REMOVE????
-    for (int i = 0; i < len; i++) {
-      if (row[i] < min) min = row[i];
-    }
-    return min;
-  }
-
-  //Returns the minimum integer in the column of a matrix
-  public static int minInCol(int[][] matrix, int colIndex) {
-    int min = (int)Double.POSITIVE_INFINITY;
-    int numRows = matrix.length;      //REMOVE????
-    int numCols = matrix[0].length;
-    for (int i = 0; i < numRows; i++) {
-        if (matrix[i][colIndex] < min) min = matrix[i][colIndex];
-    }
-    return min;
-  }
-
   // 2. ASSIGN: HELPER FUNCTIONS
 
-  /** SCAN ROW
+  /** 2.1 SCAN ROW
   Idea:
   checks each row...
   if there is exactly 1 optimal time slot, t, for that choreographer, c (row)
@@ -302,23 +303,103 @@ public class RiddimScheduler {
       // if there is exactly one 0 (0 = cheapest/best matching)
       // i.e. that row/choreographer has exactly 1 optimal time slot combination
       if (numZeros == 1) {
-        for (int iInjIndex = 0; iInjIndex < n; iInjIndex++) {     //operates on column: zeroJIndex
-          //match c w/ t
-          if (iInjIndex == zeroiIndex) bestMatch[iInjIndex][zerojIndex] = 1;
-          //remove option for other c's, b/c time slot already taken
-          else {
-            bestMatch[iInjIndex][zerojIndex] -= 1;
+         //iIndexInJ iterates through column: zeroJIndex
+        for (int iIndexInJ = 0; iIndexInJ < n; iIndexInJ++) {
+          //match c w/ t (in best match matrix)
+          if (iIndexInJ == zeroiIndex) bestMatch[iIndexInJ][zerojIndex] = 1;
+          else { //remove option for other c's, b/c time slot already taken
+            bestMatch[iIndexInJ][zerojIndex] -= 1;
           }
-
         }
       }
       // System.out.println("Best Match. i = " + i);
-      printMatrix(bestMatch);
+      // printMatrix(bestMatch);
     }
   }
 
+  /** 2.1.1 Check if all the optimal matches have been assigned
 
+  Idea:
+  If all 0s have been covered w/ lines
+  i.e. all potential optimal matches (cost = 0)
+  have been assigned (1) OR can't be used (c OR t already assigned) (-1,-2)
+        bestMatch[i][j] != 0), where 0 means available for matching
+  returns true, otherwise returns false
 
+  Implementation:
+  If any 0 has not been covered w/ lines
+  i.e. there exists an optimal match (cost = 0)
+  that hasn't been assigned (best match = 0)
+  returns false (b/c not all optimal matches assigned), otherwise returns true
+  **/
+  public boolean checkOptimalMatches() {
+    boolean allMatchesMade = true;
+    // go through all of the items in the matrix
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < n; j++) {
+        // if there exists an optimal match AND it's not assigned --> F
+        if (costMatrix[i][j] == 0 && bestMatch[i][j] == 0) return false;
+      }
+    }
+    return allMatchesMade;
+  }
+
+  /** 2.1 SCAN COLUMN
+  Idea:
+  checks each column...
+  if there is exactly 1 optimal time slot, t, for that choreographer, c (row)
+  makes c-t assignment and removes that time slot option for other c's
+
+  Pseudo Code:
+  for each row
+    check that row (scan j)
+      update how many 0s there are (numZeros)
+      upate where that 0 is (zerojIndex)
+    if there is exactly one available 0 (1 optimal matching)
+      (available = not already removed as an option, or used for an assignment)
+      update column @ zerojIndex --> best match matrix
+       1. if that is the only 0 in row --> bestMatrix  = 1 (assigned)
+       2. else (not best match) --> bestMatrix -= 1 (remove option to match)
+
+   Note:
+   don't want to make assignment if there are two optimal matches
+   i.e. numZeros !=1 b/c don't know which will be better in the end
+  **/
+  public void scanRow() {
+    int numZeros, zerojIndex, zeroiIndex;
+
+    // for each row
+    for (int i = 0; i < n; i++) {
+      numZeros = 0;
+      zerojIndex = -1;                    //-1: no zero found in row
+      zeroiIndex = -1;                    //note: these vars re-init per row
+
+      // checks each entry in that row
+      for (int j = 0; j < n; j++) {
+        // if cost = 0 (i.e. cheapest matching)
+        // AND the c and t are available to be matched
+        if ((costMatrix[i][j] == 0) && (bestMatch[i][j] == 0)) {
+          numZeros++;                       //counts num of 0s in the row
+          zeroiIndex = i;                   //stores location of 0
+          zerojIndex = j;
+        }
+      }
+      // if there is exactly one 0 (0 = cheapest/best matching)
+      // i.e. that row/choreographer has exactly 1 optimal time slot combination
+      if (numZeros == 1) {
+         //iIndexInJ iterates through column: zeroJIndex
+        for (int iIndexInJ = 0; iIndexInJ < n; iIndexInJ++) {
+          //match c w/ t (in best match matrix)
+          if (iIndexInJ == zeroiIndex) bestMatch[iIndexInJ][zerojIndex] = 1;
+          else { //remove option for other c's, b/c time slot already taken
+            bestMatch[iIndexInJ][zerojIndex] -= 1;
+          }
+        }
+      }
+      // System.out.println("Best Match. i = " + i);
+      // printMatrix(bestMatch);
+    }
+  }
 
   public static void main(String[] args) {
 
